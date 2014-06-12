@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>Tetris</title>
+        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1, maximum-scale=1">
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link href="//fonts.googleapis.com/css?family=Press+Start 2P:400" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="css/style.css" type="text/css" charset="utf-8" />
+        <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/hammer.js/1.0.10/hammer.min.js"></script>
+        <script type="text/javascript" src="js/game.js"></script>
+        <script type="text/javascript" src="js/board.js"></script>
+        <script type="text/javascript" src="js/pieces.js"></script>
+        <script type="text/javascript" src="js/initGame.js"></script>
+    </head>
+    <body>
+            
+             <div id="tetrisContainer">
+                <canvas id="tetris" width="300" height="600">
+
+                    <p>Your browser does not support the canvas element.</p>
+
+                </canvas>
+                <ul id="nextPieceContainer">
+                    <li><div id="nextPiece"></div></li>
+                    <li><div id="scoreBoard"></div></li>
+                </ul>     
+            </div>
+           
+    </body>
+</html>

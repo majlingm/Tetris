@@ -1,0 +1,140 @@
+/* CSS RESET */
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, font, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    font-size: 100%;
+    vertical-align: baseline;
+    background: transparent;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+
+/* remember to define focus styles! */
+:focus {
+    outline: 0;
+}
+
+/* remember to highlight inserts somehow! */
+ins {
+    text-decoration: none;
+}
+del {
+    text-decoration: line-through;
+}
+
+/* tables still need 'cellspacing="0"' in the markup */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+/*---------------------------------------------------------------------------*/
+
+
+body
+{
+    font-family: 'Press Start 2P';
+    background-image: url('../img/background.jpg');
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    overflow: hidden;
+    width: 100%;
+}
+
+#tetris {
+    float:left;
+    background-color: transparent;
+    background-image:url('../img/bg.png');
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+#scoreBoard {
+    float: left;
+    margin-top: 30px;
+    margin-left: 10px;
+    color: white;
+    font-size: 18px;
+    line-height: 24px;
+}
+
+#nextPieceContainer {
+    float:left;
+    margin-top:10px;
+}
+
+#nextPiece {
+    width: 100px;
+    height: 100px;
+}
+
+#tetrisContainer {
+
+    margin-right: auto;
+    margin-left: auto;
+    overflow: hidden;
+    background-repeat:no-repeat;
+    padding:60px;
+    width:850px;
+    margin-top: 10px;
+
+}
+
+
+@media screen and (max-width: 700px) {
+  
+
+  #tetrisContainer { 
+    width: 100%;
+    padding: 0px;
+    margin: 0;
+  }
+
+  #scoreBoard {
+    font-size: 13px;
+    line-height: 15px;
+    position: absolute;
+    top: 110px;
+    right: 5px;
+  }
+
+  #nextPiece {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
+
+}
+
