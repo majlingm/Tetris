@@ -31,9 +31,6 @@ function Game() {
 
     function start() {
         //Set the events, key controls
-
-
-
         setEvents()
 
         //Starting the main loop
@@ -142,127 +139,8 @@ function Game() {
                 board.movePieceTo(false, newPosition);
 
             }
-            
-            
-
 
         });
-
-
-
-        /*hammer.on("drag", function(event) {
-            //måste ta hänsyn till positionen för att få det bra :'(
-            event.stopPropagation();
-            event.preventDefault();
-
-            if(event.gesture.direction == "right" && !movingRight){
-                
-                if(movingLeft)
-                    clearInterval(movingLeft);
-
-                movingLeft = false;
-
-                board.movePieceRight();
-
-                movingRight = setTimeout(function(){
-                    board.movePieceRight();
-                    movingRight = false;
-                }, 70);
-
-            } else if(event.gesture.direction == "left" && !movingLeft){
-                
-                if(movingRight)
-                    clearInterval(movingRight);
-
-                movingRight = false;
-
-                board.movePieceLeft();
-
-                movingLeft = setTimeout(function(){
-                    board.movePieceLeft();
-                    movingRight = false;
-                }, 70);
-            }
-    
-        });
-
-        hammer.on("dragend", function(event) {
-
-
-            if(movingRight)
-                clearInterval(movingRight);
-
-            if(movingLeft)
-                clearInterval(movingLeft);
-
-            movingRight = false;
-            movingLeft = false;
-
-
-
-          /*  event.stopPropagation();
-            event.preventDefault();
-
-            if(event.gesture.direction == "right"){
-                if(movingRight)
-                   clearInterval(movingRight);
-            } else if(event.gesture.direction == "left"){
-                if(movingLeft)
-                    clearInterval(movingLeft);
-            }*/
-        //});
-
-
-        //Defining mouse controls
-        /*$(document).mousedown(function (event) {
-
-            var xPos = event.layerX;
-            var yPos = event.layerY;
-            var yNewPos = yPos;
-            var xNewPos = xPos;
-            mousedownTime = event.timeStamp;
-            console.debug(event);
-
-            if (event.which == '1') {
-
-                $(document).mousemove(function (event) {
-
-                    xNewPos = event.layerX;
-                    yNewPos = event.layerY;
-
-                    if ((xNewPos - xPos) >= 30) {
-                        xPos = xNewPos;
-                        board.movePieceRight();
-
-                    }
-
-                    if ((xNewPos - xPos) <= -30) {
-                        xPos = xNewPos;
-                        board.movePieceLeft();
-
-                    }
-
-                    if ((yNewPos - yPos) >= 30) {
-                        yPos = yNewPos;
-                        board.movePieceDown();
-
-                    }
-
-                });
-            }
-
-        });
-
-        $(document).mouseup(function (event) {
-
-            var mouseupTime = event.timeStamp;
-            $(document).unbind('mousemove');
-
-            if ((mouseupTime - mousedownTime) < 200)
-                board.nextPiece(false);
-
-        });*/
-
     }
 
     function pause() {
