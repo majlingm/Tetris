@@ -9,114 +9,99 @@ b, u, i, center,
 dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend,
 table, caption, tbody, tfoot, thead, tr, th, td {
-    margin: 0;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    font-size: 100%;
-    vertical-align: baseline;
-    background: transparent;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font-size: 100%;
+  vertical-align: baseline;
+  background: transparent;
 }
+
 body {
-    line-height: 1;
+  line-height: 1;
 }
+
 ol, ul {
-    list-style: none;
+  list-style: none;
 }
+
 blockquote, q {
-    quotes: none;
+  quotes: none;
 }
+
 blockquote:before, blockquote:after,
 q:before, q:after {
-    content: '';
-    content: none;
+  content: '';
+  content: none;
 }
 
-/* remember to define focus styles! */
 :focus {
-    outline: 0;
+  outline: 0;
 }
 
-/* remember to highlight inserts somehow! */
 ins {
-    text-decoration: none;
-}
-del {
-    text-decoration: line-through;
+  text-decoration: none;
 }
 
-/* tables still need 'cellspacing="0"' in the markup */
+del {
+  text-decoration: line-through;
+}
+
 table {
-    border-collapse: collapse;
-    border-spacing: 0;
+  border-collapse: collapse;
+  border-spacing: 0;
 }
 
 /*---------------------------------------------------------------------------*/
 
-
-body
-{
-    font-family: 'Press Start 2P';
-    background-image: url('../img/background.jpg');
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
-    -webkit-user-select: none;
-    -khtml-user-select: none;
-    -moz-user-select: none;
-    -o-user-select: none;
-    user-select: none;
-    overflow: hidden;
-    width: 100%;
+body {
+  font-family: 'Press Start 2P', monospace;
+  background-image: url('../img/background.jpg');
+  background-size: cover;
+  user-select: none;
+  overflow: hidden;
+  width: 100%;
 }
 
 #tetris {
-    float:left;
-    background-color: transparent;
-    background-image:url('../img/bg.png');
-    -webkit-background-size: cover;
-    -moz-background-size: cover;
-    -o-background-size: cover;
-    background-size: cover;
+  float: left;
+  background-color: transparent;
+  background-image: url('../img/bg.png');
+  background-size: cover;
 }
 
 #scoreBoard {
-    float: left;
-    margin-top: 30px;
-    margin-left: 10px;
-    color: white;
-    font-size: 18px;
-    line-height: 24px;
+  float: left;
+  margin-top: 30px;
+  margin-left: 10px;
+  color: white;
+  font-size: 18px;
+  line-height: 24px;
 }
 
 #nextPieceContainer {
-    float:left;
-    margin-top:10px;
+  float: left;
+  margin-top: 10px;
 }
 
 #nextPiece {
-    width: 100px;
-    height: 100px;
+  width: 100px;
+  height: 100px;
 }
 
 #tetrisContainer {
-
-    margin-right: auto;
-    margin-left: auto;
-    overflow: hidden;
-    background-repeat:no-repeat;
-    padding:60px;
-    width:850px;
-    margin-top: 10px;
-
+  margin-right: auto;
+  margin-left: auto;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  padding: 60px;
+  width: 850px;
+  margin-top: 10px;
 }
 
-
 @media screen and (max-width: 700px) {
-  
-
-  #tetrisContainer { 
+  #tetrisContainer {
     width: 100%;
     padding: 0px;
     margin: 0;
@@ -135,6 +120,4 @@ body
     top: 5px;
     right: 5px;
   }
-
 }
-

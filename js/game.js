@@ -1,192 +1,208 @@
-/*
-The game class includes all the game logic
-*/
-function Game() {
+import { Board } from './board.js';
 
-    var board = new Board();
-    var scoreBoard = $("#scoreBoard");
-    var touchSensitivityX = 1.2;
-    var touchSensitivityY = 1;
-    var scoreTotal = 0;
-    var linesTotal = 0;
-    var level = 0;
-    var delay = 1000 - (level * 6)
-    var interval;
-    var paused = false;
-     //Defining keyboard controls
-    var movingLeft = false;
-    var movingRight = false;
-    var movingDown = false;
-    var dragStartPiecePosition = false;
-    
-    var hammerOptions = {
-          prevent_default:true,
-          dragLockToAxis: true,
-          dragBlockHorizontal: true,
-          dragMinDistance: 10
-        };
+export class Game {
+  constructor() {
+    this.board = new Board();
+    this.scoreBoard = document.getElementById('scoreBoard');
+    this.touchSensitivityX = 1.2;
+    this.touchSensitivityY = 1;
+    this.scoreTotal = 0;
+    this.linesTotal = 0;
+    this.level = 0;
+    this.delay = 1000 - (this.level * 6);
+    this.interval = null;
+    this.paused = false;
 
-    var hammer = Hammer(document.body, hammerOptions);
+    // Defining keyboard controls
+    this.movingLeft = false;
+    this.movingRight = false;
+    this.movingDown = false;
+    this.dragStartPiecePosition = false;
 
-
-    function start() {
-        //Set the events, key controls
-        setEvents()
-
-        //Starting the main loop
-        setTimeout(mainLoop, delay);
-        board.nextPiece(true);
-    }
-
-    function setEvents(){
-
-        $(document).keydown(function (event) {
-
-            if (event.which == '37' && !movingLeft) {
-                board.movePieceLeft();
-                movingLeft = setInterval(board.movePieceLeft, 150);
-            }
-
-            if (event.which == '39' && !movingRight) {
-                board.movePieceRight();
-                movingRight = setInterval(board.movePieceRight, 150);
-            }
-
-            if (event.which == '40' && !movingDown) {
-                board.movePieceDown();
-                movingDown = setInterval(board.movePieceDown, 150);
-            }
-
-            if (event.which == '38') {
-                board.nextPiece(false);
-            }
-
-            if (event.which == '32') {
-                board.dropPiece(false);
-            }
-
-            if (event.which == '80') {
-
-                if (paused){
-                    unPause();
-                } else {
-                    pause();
-                }
-            }
-
-            console.log(board.getCurrentPiecePosition());
-
-        });
-
-        $(document).keyup(function (event) {
-
-            if (event.which == '37') {
-                clearInterval(movingLeft);
-                movingLeft = false;
-            }
-
-            if (event.which == '39') {
-                clearInterval(movingRight);
-                movingRight = false;
-            }
-
-            if (event.which == '40') {
-                clearInterval(movingDown);
-                movingDown = false;
-            }
-
-        });
-
-       hammer.on("tap", function(event) {
-            event.gesture.preventDefault();
-            board.nextPiece(false);
-        });
-
-        hammer.on("swipedown", function(event) {
-            event.gesture.preventDefault();
-            board.dropPiece(false);
-        });
-
-        hammer.on("dragstart", function(event) {
-            event.gesture.preventDefault();
-            dragStartPiecePosition = board.getCurrentPiecePosition();
-        });
-
-
-        hammer.on("drag", function(event) {
-
-            event.gesture.preventDefault();
-
-            var boardSize = board.getBoardSize();
-
-            if(event.gesture.direction == 'left' || event.gesture.direction == 'right'){
-                var windowWidth = $(window).width();
-                var triggerSpace = windowWidth / (boardSize.w * touchSensitivityX);
-                var deltaX = event.gesture.deltaX;
-                var rowsToMove = deltaX / triggerSpace;
-                var newPosition = dragStartPiecePosition.x + ((rowsToMove/Math.abs(rowsToMove)) *  Math.floor(Math.abs(rowsToMove))) ;
-        
-                board.movePieceTo(newPosition, false);
-            
-            } else if(event.gesture.direction == 'down'){
-                
-                var windowHeight = $(window).height();
-                var triggerSpace = windowHeight / (boardSize.h * touchSensitivityY);
-                var deltaY = event.gesture.deltaY;
-                var rowsToMove = deltaY / triggerSpace;
-                var newPosition = dragStartPiecePosition.y + ((rowsToMove/Math.abs(rowsToMove)) *  Math.floor(Math.abs(rowsToMove))) ;
-        
-                board.movePieceTo(false, newPosition);
-
-            }
-
-        });
-    }
-
-    function pause() {
-        paused = true;
-    }
-
-    function unPause() {
-        paused = false;
-        setTimeout(mainLoop, delay);
-    }
-
-    function mainLoop() {
-
-        if (!board.movePieceDown()) {
-            
-            board.placePiece();
-
-            //Calculate game level, speed, score etc.
-            lines = board.removeFullRows();
-            linesTotal += lines;
-            level = (Math.floor(linesTotal / 6) <= 10) ? Math.floor(linesTotal / 6) : 10;
-            var delay = 1000 - (level * 83);
-            scoreTotal += Math.floor(((level / 2 + 1) * (lines * 100) + (10 * lines * lines * (level / 3))));
-            scoreBoard.html("<p>Score:" + scoreTotal + "</p><p> Lines:" + linesTotal + "</p><p> Level:" + level + "</p>");
-
-            if (!board.nextPiece(true)) {
-                //Can't place the next piece
-                //Game Over
-                board.fillBoard();
-                scoreBoard.html("<p><strong>Game Over</strong></p><p>Score:" + scoreTotal + "</p><p> Lines:" + linesTotal + "</p><p> Level:" + level + "</p>");
-                return false;
-            }
-
-        } else {
-            var delay = 1000 - (level * 83);
-
-        }
-
-        if (!paused)
-            setTimeout(mainLoop, delay);
-
-    }
-
-    return {
-
-        "start": start
+    // Touch handling state
+    this.touchState = {
+      startX: 0,
+      startY: 0,
+      currentX: 0,
+      currentY: 0,
+      isDragging: false,
+      startTime: 0
     };
+  }
 
+  start() {
+    // Set the events, key controls
+    this.setEvents();
+
+    // Starting the main loop
+    setTimeout(() => this.mainLoop(), this.delay);
+    this.board.nextPiece(true);
+  }
+
+  setEvents() {
+    // Keyboard events
+    document.addEventListener('keydown', (event) => {
+      if (event.which === 37 && !this.movingLeft) {
+        this.board.movePieceLeft();
+        this.movingLeft = setInterval(() => this.board.movePieceLeft(), 150);
+      }
+
+      if (event.which === 39 && !this.movingRight) {
+        this.board.movePieceRight();
+        this.movingRight = setInterval(() => this.board.movePieceRight(), 150);
+      }
+
+      if (event.which === 40 && !this.movingDown) {
+        this.board.movePieceDown();
+        this.movingDown = setInterval(() => this.board.movePieceDown(), 150);
+      }
+
+      if (event.which === 38) {
+        this.board.nextPiece(false);
+      }
+
+      if (event.which === 32) {
+        this.board.dropPiece(false);
+      }
+
+      if (event.which === 80) {
+        if (this.paused) {
+          this.unPause();
+        } else {
+          this.pause();
+        }
+      }
+
+      console.log(this.board.getCurrentPiecePosition());
+    });
+
+    document.addEventListener('keyup', (event) => {
+      if (event.which === 37) {
+        clearInterval(this.movingLeft);
+        this.movingLeft = false;
+      }
+
+      if (event.which === 39) {
+        clearInterval(this.movingRight);
+        this.movingRight = false;
+      }
+
+      if (event.which === 40) {
+        clearInterval(this.movingDown);
+        this.movingDown = false;
+      }
+    });
+
+    // Modern touch event handling (replaces Hammer.js)
+    document.body.addEventListener('touchstart', (event) => {
+      event.preventDefault();
+      const touch = event.touches[0];
+      this.touchState.startX = touch.clientX;
+      this.touchState.startY = touch.clientY;
+      this.touchState.currentX = touch.clientX;
+      this.touchState.currentY = touch.clientY;
+      this.touchState.isDragging = false;
+      this.touchState.startTime = Date.now();
+      this.dragStartPiecePosition = this.board.getCurrentPiecePosition();
+    }, { passive: false });
+
+    document.body.addEventListener('touchmove', (event) => {
+      event.preventDefault();
+      const touch = event.touches[0];
+      this.touchState.currentX = touch.clientX;
+      this.touchState.currentY = touch.clientY;
+
+      const deltaX = this.touchState.currentX - this.touchState.startX;
+      const deltaY = this.touchState.currentY - this.touchState.startY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+      if (distance > 10) {
+        this.touchState.isDragging = true;
+        this.handleDrag(deltaX, deltaY);
+      }
+    }, { passive: false });
+
+    document.body.addEventListener('touchend', (event) => {
+      event.preventDefault();
+      const deltaX = this.touchState.currentX - this.touchState.startX;
+      const deltaY = this.touchState.currentY - this.touchState.startY;
+      const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      const timeDiff = Date.now() - this.touchState.startTime;
+
+      // Detect swipe down (fast downward movement)
+      if (timeDiff < 300 && deltaY > 50 && Math.abs(deltaX) < 50) {
+        this.board.dropPiece(false);
+      }
+      // Detect tap (no significant movement)
+      else if (!this.touchState.isDragging && distance < 10) {
+        this.board.nextPiece(false);
+      }
+
+      this.touchState.isDragging = false;
+    }, { passive: false });
+  }
+
+  handleDrag(deltaX, deltaY) {
+    const boardSize = this.board.getBoardSize();
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    // Determine primary direction
+    if (absX > absY) {
+      // Horizontal drag
+      const windowWidth = window.innerWidth;
+      const triggerSpace = windowWidth / (boardSize.w * this.touchSensitivityX);
+      const rowsToMove = deltaX / triggerSpace;
+      const newPosition = this.dragStartPiecePosition.x +
+        ((rowsToMove / Math.abs(rowsToMove)) * Math.floor(Math.abs(rowsToMove)));
+
+      this.board.movePieceTo(newPosition, false);
+    } else {
+      // Vertical drag
+      const windowHeight = window.innerHeight;
+      const triggerSpace = windowHeight / (boardSize.h * this.touchSensitivityY);
+      const rowsToMove = deltaY / triggerSpace;
+      const newPosition = this.dragStartPiecePosition.y +
+        ((rowsToMove / Math.abs(rowsToMove)) * Math.floor(Math.abs(rowsToMove)));
+
+      this.board.movePieceTo(false, newPosition);
+    }
+  }
+
+  pause() {
+    this.paused = true;
+  }
+
+  unPause() {
+    this.paused = false;
+    setTimeout(() => this.mainLoop(), this.delay);
+  }
+
+  mainLoop() {
+    if (!this.board.movePieceDown()) {
+      this.board.placePiece();
+
+      // Calculate game level, speed, score etc.
+      const lines = this.board.removeFullRows();
+      this.linesTotal += lines;
+      this.level = (Math.floor(this.linesTotal / 6) <= 10) ? Math.floor(this.linesTotal / 6) : 10;
+      const delay = 1000 - (this.level * 83);
+      this.scoreTotal += Math.floor(((this.level / 2 + 1) * (lines * 100) + (10 * lines * lines * (this.level / 3))));
+      this.scoreBoard.innerHTML = `<p>Score:${this.scoreTotal}</p><p> Lines:${this.linesTotal}</p><p> Level:${this.level}</p>`;
+
+      if (!this.board.nextPiece(true)) {
+        // Can't place the next piece
+        // Game Over
+        this.board.fillBoard();
+        this.scoreBoard.innerHTML = `<p><strong>Game Over</strong></p><p>Score:${this.scoreTotal}</p><p> Lines:${this.linesTotal}</p><p> Level:${this.level}</p>`;
+        return false;
+      }
+    } else {
+      const delay = 1000 - (this.level * 83);
+    }
+
+    if (!this.paused) {
+      setTimeout(() => this.mainLoop(), this.delay);
+    }
+  }
 }

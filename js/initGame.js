@@ -1,11 +1,11 @@
-/*
-    Tetris clone
-    Written By Mikael Majling
-*/
-$(function () {
-    
-    //Start the game
-    game = new Game();
-    game.start();
+import { Game } from './game.js';
 
+// Tetris clone
+// Written By Mikael Majling
+// Modernized 2024
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Start the game
+  const game = new Game();
+  game.start();
 });
