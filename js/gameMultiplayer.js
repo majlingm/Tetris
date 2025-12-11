@@ -1,19 +1,26 @@
 import { Board } from './board.js';
 
-export class Game {
-  constructor() {
+export class GameMultiplayer {
+  constructor(socket) {
+    this.socket = socket;
     this.board = new Board();
+    this.opponentBoard = null;
     this.scoreBoard = document.getElementById('scoreBoard');
+    this.statusBoard = document.getElementById('statusBoard');
+    this.opponentCanvas = document.getElementById('opponentBoard');
+    this.opponentCtx = this.opponentCanvas ? this.opponentCanvas.getContext('2d') : null;
+
     this.touchSensitivityX = 1.2;
     this.touchSensitivityY = 1;
     this.scoreTotal = 0;
     this.linesTotal = 0;
     this.level = 0;
     this.delay = 1000 - (this.level * 6);
-    this.interval = null;
     this.paused = false;
+    this.gameStarted = false;
+    this.isLeader = false;
 
-    // Defining keyboard controls
+    // Keyboard controls
     this.movingLeft = false;
     this.movingRight = false;
     this.movingDown = false;
@@ -28,9 +35,72 @@ export class Game {
       isDragging: false,
       startTime: 0
     };
+
+    this.setupSocketHandlers();
+  }
+
+  setupSocketHandlers() {
+    this.socket.on('waitingForOpponent', () => {
+      this.updateStatus('Waiting for opponent...');
+    });
+
+    this.socket.on('opponentFound', (data) => {
+      this.updateStatus('Opponent found! Get ready...');
+      // Signal we're ready to start
+      setTimeout(() => {
+        this.socket.emit('playerReady');
+      }, 1000);
+    });
+
+    this.socket.on('startGame', (data) => {
+      this.isLeader = data.isLeader;
+      this.start();
+    });
+
+    this.socket.on('nextTick', () => {
+      // Server-controlled game tick (not used in client-controlled mode)
+    });
+
+    this.socket.on('receiveLines', (data) => {
+      this.addPenaltyLines(data.lines);
+    });
+
+    this.socket.on('updateOpponentBoard', (data) => {
+      this.opponentBoard = data.board;
+      this.drawOpponentBoard();
+    });
+
+    this.socket.on('winner', () => {
+      this.updateStatus('YOU WIN!');
+      this.paused = true;
+    });
+
+    this.socket.on('loser', () => {
+      this.updateStatus('GAME OVER - You Lost');
+      this.paused = true;
+      this.board.fillBoard();
+    });
+
+    this.socket.on('opponentDisconnected', () => {
+      this.updateStatus('Opponent disconnected - You Win!');
+      this.paused = true;
+    });
+  }
+
+  updateStatus(message) {
+    if (this.statusBoard) {
+      this.statusBoard.innerHTML = `<p>${message}</p>`;
+    }
   }
 
   start() {
+    this.gameStarted = true;
+    this.updateStatus('FIGHT!');
+
+    setTimeout(() => {
+      this.updateStatus('');
+    }, 2000);
+
     // Set the events, key controls
     this.setEvents();
 
@@ -72,8 +142,6 @@ export class Game {
           this.pause();
         }
       }
-
-      console.log(this.board.getCurrentPiecePosition());
     });
 
     document.addEventListener('keyup', (event) => {
@@ -93,7 +161,7 @@ export class Game {
       }
     });
 
-    // Modern touch event handling (replaces Hammer.js)
+    // Modern touch event handling
     document.body.addEventListener('touchstart', (event) => {
       event.preventDefault();
       const touch = event.touches[0];
@@ -129,11 +197,11 @@ export class Game {
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       const timeDiff = Date.now() - this.touchState.startTime;
 
-      // Detect swipe down (fast downward movement)
+      // Detect swipe down
       if (timeDiff < 300 && deltaY > 50 && Math.abs(deltaX) < 50) {
         this.board.dropPiece(false);
       }
-      // Detect tap (no significant movement)
+      // Detect tap
       else if (!this.touchState.isDragging && distance < 10) {
         this.board.nextPiece(false);
       }
@@ -147,9 +215,7 @@ export class Game {
     const absX = Math.abs(deltaX);
     const absY = Math.abs(deltaY);
 
-    // Determine primary direction
     if (absX > absY) {
-      // Horizontal drag
       const windowWidth = window.innerWidth;
       const triggerSpace = windowWidth / (boardSize.w * this.touchSensitivityX);
       const rowsToMove = deltaX / triggerSpace;
@@ -158,7 +224,6 @@ export class Game {
 
       this.board.movePieceTo(newPosition, false);
     } else {
-      // Vertical drag
       const windowHeight = window.innerHeight;
       const triggerSpace = windowHeight / (boardSize.h * this.touchSensitivityY);
       const rowsToMove = deltaY / triggerSpace;
@@ -167,6 +232,69 @@ export class Game {
 
       this.board.movePieceTo(false, newPosition);
     }
+  }
+
+  addPenaltyLines(numLines) {
+    // Add penalty lines to the bottom of the board
+    const boardArray = this.board.getBoard();
+    const boardWidth = this.board.getBoardSize().w;
+
+    for (let i = 0; i < numLines; i++) {
+      // Remove top row
+      boardArray.shift();
+
+      // Add new row at bottom with random gaps
+      const newRow = new Array(boardWidth).fill(2);
+      newRow[0] = 1; // Wall
+      newRow[boardWidth - 1] = 1; // Wall
+
+      // Create a random gap
+      const gapPosition = Math.floor(Math.random() * (boardWidth - 2)) + 1;
+      newRow[gapPosition] = 0;
+
+      boardArray.push(newRow);
+    }
+
+    this.board.drawBoard();
+  }
+
+  drawOpponentBoard() {
+    if (!this.opponentCtx || !this.opponentBoard) return;
+
+    const canvas = this.opponentCanvas;
+    const ctx = this.opponentCtx;
+    const cellWidth = canvas.width / 10;
+    const cellHeight = canvas.height / 20;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let y = 0;
+    this.opponentBoard.forEach((row) => {
+      let x = 0;
+      row.forEach((cell) => {
+        if (cell > 1) {
+          ctx.fillStyle = this.getCellColor(cell);
+          ctx.fillRect(x, y, cellWidth - 1, cellHeight - 1);
+        }
+        x += cellWidth;
+      });
+      y += cellHeight;
+    });
+  }
+
+  getCellColor(colorIndex) {
+    const colors = [
+      '#000000', // 0 - empty
+      '#333333', // 1 - wall
+      '#00ffff', // 2 - I piece (cyan)
+      '#ffff00', // 3 - O piece (yellow)
+      '#800080', // 4 - T piece (purple)
+      '#00ff00', // 5 - S piece (green)
+      '#ff0000', // 6 - Z piece (red)
+      '#0000ff', // 7 - J piece (blue)
+      '#ff8000'  // 8 - L piece (orange)
+    ];
+    return colors[colorIndex] || '#ffffff';
   }
 
   pause() {
@@ -186,19 +314,25 @@ export class Game {
       const lines = this.board.removeFullRows();
       this.linesTotal += lines;
       this.level = (Math.floor(this.linesTotal / 6) <= 10) ? Math.floor(this.linesTotal / 6) : 10;
-      const delay = 1000 - (this.level * 83);
+      this.delay = 1000 - (this.level * 83);
       this.scoreTotal += Math.floor(((this.level / 2 + 1) * (lines * 100) + (10 * lines * lines * (this.level / 3))));
-      this.scoreBoard.innerHTML = `<p>Score:${this.scoreTotal}</p><p> Lines:${this.linesTotal}</p><p> Level:${this.level}</p>`;
+      this.scoreBoard.innerHTML = `<p>Score:${this.scoreTotal}</p><p>Lines:${this.linesTotal}</p><p>Level:${this.level}</p>`;
+
+      // Send lines to opponent if we cleared any
+      if (lines > 1) {
+        this.socket.emit('sendLines', { lines: lines - 1 });
+      }
+
+      // Send board state to opponent
+      this.socket.emit('sendBoard', { board: this.board.getBoard() });
 
       if (!this.board.nextPiece(true)) {
-        // Can't place the next piece
-        // Game Over
+        // Can't place the next piece - Game Over
         this.board.fillBoard();
-        this.scoreBoard.innerHTML = `<p><strong>Game Over</strong></p><p>Score:${this.scoreTotal}</p><p> Lines:${this.linesTotal}</p><p> Level:${this.level}</p>`;
+        this.socket.emit('gameOver');
+        this.scoreBoard.innerHTML = `<p><strong>Game Over</strong></p><p>Score:${this.scoreTotal}</p><p>Lines:${this.linesTotal}</p><p>Level:${this.level}</p>`;
         return false;
       }
-    } else {
-      const delay = 1000 - (this.level * 83);
     }
 
     if (!this.paused) {

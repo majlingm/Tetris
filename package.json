@@ -1,0 +1,24 @@
+{
+  "name": "tetris-game",
+  "version": "2.0.0",
+  "description": "A modern Tetris clone written in JavaScript (modernized from 2010)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server/server.js",
+    "server:dev": "nodemon server/server.js"
+  },
+  "keywords": ["tetris", "game", "canvas"],
+  "author": "Mikael Majling",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "vite": "^5.0.0"
+  }
+}

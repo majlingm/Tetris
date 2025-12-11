@@ -1,456 +1,360 @@
+import { Pieces } from './pieces.js';
 
-/*
-  The tetris board is stored as a matrix. The Board class creates the board up on instantiation
-  and includes methods to move and add pieces and to draw the board on a canvas element. 
-*/
+export class Board {
+  constructor() {
+    // Setting variables
+    this.boardWidth = 10;
+    this.boardHeight = 20;
+    this.currentPieceX = (this.boardWidth / 2) - 3;
+    this.currentPieceY = 0;
+    this.paper = document.getElementById('tetris');
+    this.nextPieceBox = document.getElementById('nextPiece');
+    this.paperCx = this.paper.getContext('2d');
+    this.pieces = new Pieces();
+    this.paperWidth = this.paper.width;
+    this.paperHeight = this.paper.height;
+    this.cellWidth = this.paperWidth / this.boardWidth;
+    this.cellHeight = this.paperHeight / this.boardHeight;
+    this.board = new Array(this.boardHeight);
+    this.currentPieceCoords = [];
+    this.currentPiece = [];
+    this.nextPieceInLine = this.pieces.getNewPiece();
+    this.blocks = [];
 
-function Board() {
+    this.init();
+  }
 
-    //Setting variables
-    var boardWidth = 10;
-    var boardHeight = 20;
-    var currentPieceX = (boardWidth / 2) - 3;
-    var currentPieceY = 0;
-    var paper = $("#tetris");
-    var nextPieceBox = $("#nextPiece");
-    var paperCx = paper[0].getContext('2d');
-    var pieces = new Pieces();
-    var paperWidth = paper[0].width;
-    var paperHeight = paper[0].height;
-    var cellWidth = paperWidth / boardWidth;
-    var cellHeight = paperHeight / boardHeight;
-    var board = new Array(boardHeight);
-    var currentPieceCoords = [];
-    var currentPiece = [];
-    
-    var nextPieceInLine = pieces.getNewPiece();
+  init() {
+    this.fitBoardToScreen();
 
-    var blocks = [];
-
-
-    function init() {
-        
-        fitBoardToScreen();
-
-        //Preloading images
-        for (var i = 0; i < 7; i++) {
-            blocks.push(new Image());
-            blocks[i].src = "img/block" + (i + 1) + ".png";
-        }
-
-        //init and fill the board
-        $.each(board, function (key, value) {
-
-            board[key] = new Array(boardWidth);
-
-            $.each(board[key], function (key2, value2) {
-
-                if ((key2 == 0) || (key2 == (boardWidth - 1)) || (key == boardHeight - 1))
-                    board[key][key2] = 1;
-                else
-                    board[key][key2] = 0;
-
-            });
-
-        });
-
-        $(window).resize(function() {
-            fitBoardToScreen();
-        });
-
+    // Preloading images
+    for (let i = 0; i < 7; i++) {
+      this.blocks.push(new Image());
+      this.blocks[i].src = `img/block${i + 1}.png`;
     }
 
+    // Initialize and fill the board
+    for (let key = 0; key < this.board.length; key++) {
+      this.board[key] = new Array(this.boardWidth);
 
-    function drawNextPiece() {
-        nextPieceBox.html("");
-
-        $.each(nextPieceInLine, function (key, value) {
-            $.each(value, function (line, color) {
-            
-                if (color > 0){
-                    nextPieceBox.append($("<img>").attr('src', blocks[color - 1].src).width(20).height(20).css('float', 'left'));
-                } else {
-                    nextPieceBox.append($("<div>").width(20).height(20).css('float', 'left'));
-                } 
-            
-            });
-
-        });
-
-    }
-
-    function movePieceLeft() {
-
-        if (!detectCollision(-1, 0)) {
-            currentPieceX--;
-            drawBoard();
-        }
-    }
-
-    function movePieceRight() {
-
-        if (!detectCollision(1, 0)) {
-            currentPieceX++;
-            drawBoard();
-        }
-    }
-
-    function movePieceDown() {
-        if (!detectCollision(0, 1)) {
-            currentPieceY++;
-            drawBoard();
-            return true;
+      for (let key2 = 0; key2 < this.board[key].length; key2++) {
+        if ((key2 === 0) || (key2 === (this.boardWidth - 1)) || (key === this.boardHeight - 1)) {
+          this.board[key][key2] = 1;
         } else {
-            return false;
+          this.board[key][key2] = 0;
         }
+      }
     }
 
+    window.addEventListener('resize', () => {
+      this.fitBoardToScreen();
+    });
+  }
 
-    function movePieceTo(x, y){
+  drawNextPiece() {
+    this.nextPieceBox.innerHTML = '';
 
-        if(x !== false){
-            
-             //x can be negative sometimes it seems, fixed it with this hack :`(
-            var currentPieceXpositive = currentPieceX + 100;
-            x = x + 100;
-
-            var neededMovesX = x - currentPieceXpositive;
-            var direction = false;
-
-            if(neededMovesX){
-
-                direction = (neededMovesX / Math.abs(neededMovesX)) > 0 ? 'right' : 'left';
-                neededMovesX = Math.abs(neededMovesX);
-
-                for (var i = 0; i < neededMovesX; i++) {
-                    
-                    if(direction == 'left'){ //Move left
-                        movePieceLeft();
-                    } else if(direction == 'right'){ //Move right
-                        movePieceRight();
-                    }
-                }
-            }
-        }
-
-        if(y !== false){
-
-            var neededMovesY = y - currentPieceY;
-            var direction = false;
-
-            if(neededMovesY){
-
-                direction = (neededMovesY / Math.abs(neededMovesY)) > 0 ? 'down' : 'up';
-                neededMovesY = Math.abs(neededMovesY);
-
-                for (var i = 0; i < neededMovesY; i++) {
-                    
-                    if(direction == 'up'){ //Move up
-                        //You can't move pieces up
-                    } else if(direction == 'down'){ //Move down
-                        movePieceDown();
-                    }
-                
-                }
-            }
-
-        }
-
-    }
-
-    function dropPiece() {
-        if (currentPiece) {
-            var yCheck = 0;
-
-            while (!detectCollision(0, yCheck)) {
-                yCheck++;
-            }
-
-            currentPieceY = currentPieceY + yCheck - 1;
-            drawBoard();
-            placePiece();
-        }
-
-    }
-
-    function getBoard() {
-
-        return board;
-
-    }
-
-    function getBoardSize() {
-
-        return {
-            w:boardWidth,
-            h:boardHeight
-        };
-
-    }
-
-    function getCurrentPiecePosition(){
-
-        return {
-            x:currentPieceX,
-            y:currentPieceY
-        };
-    }
-
-    function fitBoardToScreen(){
-        
-        var availablePixels = $(window).height();
-        var tetrisPosition = paper.offset();
-
-        availablePixels = availablePixels - (Math.ceil(tetrisPosition.top) * 2);
-        paper.width(availablePixels/2);
-        paper.height(availablePixels);
-    }
-
-    function pieceToCoords(piece) {
-
-        var coords = [];
-
-        $.each(piece, function (y, value) {
-
-            $.each(value, function (x, c) {
-
-                if(c) {
-                    coords.push([y, x, c]);
-                }
-
-            });
-
-        });
-
-        //Make some corrections to make each piece start at the top
-        $.each(coords, function (key, value) {
-
-            coords[key][0] += -(coords[coords.length - 1][0]);
-
-        });
-
-        return coords;
-
-    }
-
-    function nextPiece(newPiece) {
-
-        if (newPiece) {
-
-            currentPiece = nextPieceInLine;
-            nextPieceInLine = pieces.getNewPiece();
-            currentPieceX = (boardWidth / 2) - 3;
-            currentPieceY = 0;
-            drawNextPiece();
-
-
-            if (detectCollision(0, 0, pieceToCoords(currentPiece))){
-                return false;
-            }
-
+    this.nextPieceInLine.forEach((row) => {
+      row.forEach((color) => {
+        if (color > 0) {
+          const img = document.createElement('img');
+          img.src = this.blocks[color - 1].src;
+          img.width = 20;
+          img.height = 20;
+          img.style.cssFloat = 'left';
+          this.nextPieceBox.appendChild(img);
         } else {
-
-            if (!detectCollision(0, 0, pieceToCoords(pieces.seeNextInRotation()))){
-                currentPiece = pieces.getNextRotation();
-            } else {
-                return false;
-            }
+          const div = document.createElement('div');
+          div.style.width = '20px';
+          div.style.height = '20px';
+          div.style.cssFloat = 'left';
+          this.nextPieceBox.appendChild(div);
         }
-        currentPieceCoords = [];
-        currentPieceCoords = pieceToCoords(currentPiece);
-        drawBoard();
-        return true;
+      });
+    });
+  }
 
-
-
+  movePieceLeft() {
+    if (!this.detectCollision(-1, 0)) {
+      this.currentPieceX--;
+      this.drawBoard();
     }
+  }
 
-    //Tests if a piece can move x, y steps, returns true if collision is detected
-    //If piece isnt set it will use the currentPieceCoords
-    function detectCollision(x, y, piece) {
+  movePieceRight() {
+    if (!this.detectCollision(1, 0)) {
+      this.currentPieceX++;
+      this.drawBoard();
+    }
+  }
 
-        var result = 0;
-        var pieceCoords = [];
+  movePieceDown() {
+    if (!this.detectCollision(0, 1)) {
+      this.currentPieceY++;
+      this.drawBoard();
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-        if (piece){
-            $.extend(true, pieceCoords, piece);
-        } else {
-            $.extend(true, pieceCoords, currentPieceCoords);
+  movePieceTo(x, y) {
+    if (x !== false) {
+      // x can be negative sometimes, fixing with offset
+      const currentPieceXpositive = this.currentPieceX + 100;
+      x = x + 100;
+
+      let neededMovesX = x - currentPieceXpositive;
+      let direction = false;
+
+      if (neededMovesX) {
+        direction = (neededMovesX / Math.abs(neededMovesX)) > 0 ? 'right' : 'left';
+        neededMovesX = Math.abs(neededMovesX);
+
+        for (let i = 0; i < neededMovesX; i++) {
+          if (direction === 'left') {
+            this.movePieceLeft();
+          } else if (direction === 'right') {
+            this.movePieceRight();
+          }
         }
-
-        $.each(pieceCoords, function (key, value) {
-
-            //Only check places that are on screen
-            if ((value[0] + currentPieceY + y) >= 0 && (value[1] + currentPieceX + x) >= 0 && (value[1] + currentPieceX) < boardWidth){
-                result += board[value[0] + currentPieceY + y][value[1] + currentPieceX + x];
-            }
-
-            if (((value[1] + currentPieceX + x) < 1) || ((value[1] + currentPieceX + x) >= (boardWidth - 1))){
-                result += 1;
-            }
-
-        });
-
-        return result;
+      }
     }
 
-    //Adds a piece to the board so that it sticks
-    function placePiece() {
-        if (currentPiece) {
-            $.each(currentPieceCoords, function (key, value) {
+    if (y !== false) {
+      let neededMovesY = y - this.currentPieceY;
+      let direction = false;
 
-                if ((value[0] + currentPieceY) >= 0){
-                    board[value[0] + currentPieceY][value[1] + currentPieceX] = value[2];
-                }
+      if (neededMovesY) {
+        direction = (neededMovesY / Math.abs(neededMovesY)) > 0 ? 'down' : 'up';
+        neededMovesY = Math.abs(neededMovesY);
 
-            });
-
-            currentPiece = false;
+        for (let i = 0; i < neededMovesY; i++) {
+          if (direction === 'down') {
+            this.movePieceDown();
+          }
+          // Can't move pieces up
         }
+      }
     }
+  }
 
-    //Removes rows that are full from the board array, returning number of rows removed
-    function removeFullRows() {
+  dropPiece() {
+    if (this.currentPiece) {
+      let yCheck = 0;
 
-        var rows = 0;
-        var count = 0;
+      while (!this.detectCollision(0, yCheck)) {
+        yCheck++;
+      }
 
-        $.each(board, function (key, value) {
-
-            count = 0;
-
-            $.each(board[key], function (key2, value2) {
-
-                if (value2 > 1){
-                    count++;
-                }
-
-
-            });
-
-            if (count == (boardWidth - 2)) {
-
-                var emptyRow = new Array(boardWidth);
-
-                $.each(emptyRow, function (key, value) {
-
-                    emptyRow[key] = 0;
-
-                });
-
-                emptyRow[0] = 1;
-                emptyRow[emptyRow.length - 1] = 1;
-                rows++;
-                board.splice(key, 1);
-                board.unshift(emptyRow);
-
-            }
-
-        });
-
-        drawBoard();
-
-        return rows;
-
-
+      this.currentPieceY = this.currentPieceY + yCheck - 1;
+      this.drawBoard();
+      this.placePiece();
     }
+  }
 
-    //Draws the board and the pieces on it to a canvas element
-    function drawBoard() {
+  getBoard() {
+    return this.board;
+  }
 
-        var x = 0;
-        var y = 0;
-        var yCheck = 0;
-        var currentBoard = [];
-        //Deepcopys the array object
-        $.extend(true, currentBoard, board);
-
-        //Is there a piece on the board
-        if (currentPiece) {
-
-            //Calculate shadowPiece
-            while (!detectCollision(0, yCheck)) {
-                yCheck++;
-            }
-
-            $.each(currentPieceCoords, function (key, value) {
-
-                //Add shadowPiece
-                if ((value[0] + currentPieceY + yCheck > 0) && (currentBoard[value[0] + currentPieceY + yCheck - 1][value[1] + currentPieceX] == 0)){
-                    currentBoard[value[0] + currentPieceY + yCheck - 1][value[1] + currentPieceX] = 7;
-                }
-
-                //Only add blocks that are on screen
-                if ((value[0] + currentPieceY) >= 0) {
-                    currentBoard[value[0] + currentPieceY][value[1] + currentPieceX] = value[2];
-                }
-
-            });
-
-        }
-
-        clearBoard();
-
-        $.each(currentBoard, function (key, value) {
-
-            $.each(currentBoard[key], function (key2, value2) {
-
-                if (currentBoard[key][key2] == 1) {
-
-                } else if (currentBoard[key][key2] > 1) {
-                    paperCx.drawImage(blocks[currentBoard[key][key2] - 1], x, y, (paperWidth / 500) * 50, (paperHeight / 1000) * 50);
-
-                }
-                x += cellWidth;
-
-            });
-
-            x = 0;
-            y += cellHeight;
-        });
-
-    }
-
-    //Clears the canvas element
-    function clearBoard() {
-
-        paperCx.clearRect(0, 0, paper[0].width, paper[0].height);
-
-    }
-
-    //Fills the board with blocks, used to show the game is over
-    function fillBoard() {
-
-        $.each(board, function (key, row) {
-            $.each(row, function (key2, value) {
-                if (board[key][key2] != 1)
-                    board[key][key2] = Math.floor(Math.random() * 5) + 2;
-            });
-        });
-
-        drawBoard();
-
-    }
-
-    init();
-
+  getBoardSize() {
     return {
-
-        "getBoard": getBoard,
-        "drawBoard": drawBoard,
-        "movePieceLeft": movePieceLeft,
-        "movePieceRight": movePieceRight,
-        "movePieceDown": movePieceDown,
-        "nextPiece": nextPiece,
-        "placePiece": placePiece,
-        "removeFullRows": removeFullRows,
-        "fillBoard": fillBoard,
-        "dropPiece": dropPiece,
-        "getCurrentPiecePosition":getCurrentPiecePosition,
-        "getBoardSize":getBoardSize,
-        "movePieceTo":movePieceTo
+      w: this.boardWidth,
+      h: this.boardHeight
     };
+  }
 
+  getCurrentPiecePosition() {
+    return {
+      x: this.currentPieceX,
+      y: this.currentPieceY
+    };
+  }
 
+  fitBoardToScreen() {
+    const availablePixels = window.innerHeight;
+    const tetrisPosition = this.paper.getBoundingClientRect();
 
+    const adjustedPixels = availablePixels - (Math.ceil(tetrisPosition.top) * 2);
+    this.paper.width = adjustedPixels / 2;
+    this.paper.height = adjustedPixels;
+  }
+
+  pieceToCoords(piece) {
+    const coords = [];
+
+    piece.forEach((row, y) => {
+      row.forEach((c, x) => {
+        if (c) {
+          coords.push([y, x, c]);
+        }
+      });
+    });
+
+    // Make some corrections to make each piece start at the top
+    coords.forEach((value, key) => {
+      coords[key][0] += -(coords[coords.length - 1][0]);
+    });
+
+    return coords;
+  }
+
+  nextPiece(newPiece) {
+    if (newPiece) {
+      this.currentPiece = this.nextPieceInLine;
+      this.nextPieceInLine = this.pieces.getNewPiece();
+      this.currentPieceX = (this.boardWidth / 2) - 3;
+      this.currentPieceY = 0;
+      this.drawNextPiece();
+
+      if (this.detectCollision(0, 0, this.pieceToCoords(this.currentPiece))) {
+        return false;
+      }
+    } else {
+      if (!this.detectCollision(0, 0, this.pieceToCoords(this.pieces.seeNextInRotation()))) {
+        this.currentPiece = this.pieces.getNextRotation();
+      } else {
+        return false;
+      }
+    }
+
+    this.currentPieceCoords = [];
+    this.currentPieceCoords = this.pieceToCoords(this.currentPiece);
+    this.drawBoard();
+    return true;
+  }
+
+  // Tests if a piece can move x, y steps, returns true if collision is detected
+  // If piece isn't set it will use the currentPieceCoords
+  detectCollision(x, y, piece) {
+    let result = 0;
+    const pieceCoords = piece ? [...piece.map(arr => [...arr])] : [...this.currentPieceCoords.map(arr => [...arr])];
+
+    pieceCoords.forEach((value) => {
+      // Only check places that are on screen
+      if ((value[0] + this.currentPieceY + y) >= 0 &&
+          (value[1] + this.currentPieceX + x) >= 0 &&
+          (value[1] + this.currentPieceX) < this.boardWidth) {
+        result += this.board[value[0] + this.currentPieceY + y][value[1] + this.currentPieceX + x];
+      }
+
+      if (((value[1] + this.currentPieceX + x) < 1) ||
+          ((value[1] + this.currentPieceX + x) >= (this.boardWidth - 1))) {
+        result += 1;
+      }
+    });
+
+    return result;
+  }
+
+  // Adds a piece to the board so that it sticks
+  placePiece() {
+    if (this.currentPiece) {
+      this.currentPieceCoords.forEach((value) => {
+        if ((value[0] + this.currentPieceY) >= 0) {
+          this.board[value[0] + this.currentPieceY][value[1] + this.currentPieceX] = value[2];
+        }
+      });
+
+      this.currentPiece = false;
+    }
+  }
+
+  // Removes rows that are full from the board array, returning number of rows removed
+  removeFullRows() {
+    let rows = 0;
+
+    for (let key = 0; key < this.board.length; key++) {
+      let count = 0;
+
+      for (let key2 = 0; key2 < this.board[key].length; key2++) {
+        if (this.board[key][key2] > 1) {
+          count++;
+        }
+      }
+
+      if (count === (this.boardWidth - 2)) {
+        const emptyRow = new Array(this.boardWidth).fill(0);
+        emptyRow[0] = 1;
+        emptyRow[emptyRow.length - 1] = 1;
+        rows++;
+        this.board.splice(key, 1);
+        this.board.unshift(emptyRow);
+      }
+    }
+
+    this.drawBoard();
+    return rows;
+  }
+
+  // Draws the board and the pieces on it to a canvas element
+  drawBoard() {
+    let x = 0;
+    let y = 0;
+    let yCheck = 0;
+
+    // Deep copy the array
+    const currentBoard = this.board.map(row => [...row]);
+
+    // Is there a piece on the board
+    if (this.currentPiece) {
+      // Calculate shadowPiece
+      while (!this.detectCollision(0, yCheck)) {
+        yCheck++;
+      }
+
+      this.currentPieceCoords.forEach((value) => {
+        // Add shadowPiece
+        if ((value[0] + this.currentPieceY + yCheck > 0) &&
+            (currentBoard[value[0] + this.currentPieceY + yCheck - 1][value[1] + this.currentPieceX] === 0)) {
+          currentBoard[value[0] + this.currentPieceY + yCheck - 1][value[1] + this.currentPieceX] = 7;
+        }
+
+        // Only add blocks that are on screen
+        if ((value[0] + this.currentPieceY) >= 0) {
+          currentBoard[value[0] + this.currentPieceY][value[1] + this.currentPieceX] = value[2];
+        }
+      });
+    }
+
+    this.clearBoard();
+
+    currentBoard.forEach((row, rowKey) => {
+      row.forEach((cell, cellKey) => {
+        if (currentBoard[rowKey][cellKey] === 1) {
+          // Wall - don't draw
+        } else if (currentBoard[rowKey][cellKey] > 1) {
+          this.paperCx.drawImage(
+            this.blocks[currentBoard[rowKey][cellKey] - 1],
+            x,
+            y,
+            (this.paperWidth / 500) * 50,
+            (this.paperHeight / 1000) * 50
+          );
+        }
+        x += this.cellWidth;
+      });
+
+      x = 0;
+      y += this.cellHeight;
+    });
+  }
+
+  // Clears the canvas element
+  clearBoard() {
+    this.paperCx.clearRect(0, 0, this.paper.width, this.paper.height);
+  }
+
+  // Fills the board with blocks, used to show the game is over
+  fillBoard() {
+    this.board.forEach((row, key) => {
+      row.forEach((value, key2) => {
+        if (this.board[key][key2] !== 1) {
+          this.board[key][key2] = Math.floor(Math.random() * 5) + 2;
+        }
+      });
+    });
+
+    this.drawBoard();
+  }
 }
